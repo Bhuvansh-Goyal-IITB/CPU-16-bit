@@ -19,6 +19,9 @@ architecture bhv of mux_4x1_3bit is
   end component mux_4x1_1bit;
 begin
   mux_gen: for i in 0 to 2 generate
-    mux_4x1: mux_4x1_1bit port map (i3(i) & i2(i) & i1(i) & i0(i), s, y(i)); 
+		signal temp_signal: std_logic_vector(3 downto 0);
+	begin
+		temp_signal <= i3(i) & i2(i) & i1(i) & i0(i);
+    mux_4x1: mux_4x1_1bit port map (temp_signal, s, y(i)); 
   end generate mux_gen;  
 end architecture bhv;

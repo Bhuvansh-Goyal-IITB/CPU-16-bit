@@ -19,6 +19,9 @@ architecture bhv of mux_2x1_16bit is
   end component mux_2x1_1bit;
 begin
   mux_gen: for i in 0 to 15 generate
-    mux_2x1: mux_2x1_1bit port map (i1(i) & i0(i), s, y(i));
+		signal temp_signal: std_logic_vector(1 downto 0);
+	begin
+		temp_signal <= i1(i) & i0(i);
+    mux_2x1: mux_2x1_1bit port map (temp_signal, s, y(i));
   end generate mux_gen;
 end architecture bhv;

@@ -3,7 +3,7 @@ use IEEE.std_logic_1164.all;
 
 entity controller is
   port (
-    clock, z, ready: in std_logic;
+    clock, z: in std_logic;
     opcode: in std_logic_vector(3 downto 0);
     control: out std_logic_vector(19 downto 0) := x"00000";
     print: out std_logic := '0'
@@ -22,16 +22,12 @@ begin
     end if;
   end process clock_proc;
   
-  state_transition: process(present_state, opcode, ready)
+  state_transition: process(present_state, opcode)
   begin
     case present_state is 
       when s1 => 
         print <= '0';
-        if (ready = '1') then 
-          next_state <= s2;
-        else 
-          next_state <= s1;
-        end if;
+        next_state <= s2;
       when s2 => 
         print <= '0';
         if (opcode = "0000") then
@@ -76,15 +72,11 @@ begin
     end case;
   end process state_transition;
 
-  output_proc: process(present_state, ready, halt)
+  output_proc: process(present_state, halt)
   begin
     case present_state is
       when s1 =>
-        if (ready = '1') then
-          control <= x"C0000";
-        else 
-          control <= x"00000";
-        end if; 
+				control <= x"C0000";
       when s2 =>
         if (halt <= '0') then
           control <= x"30000";

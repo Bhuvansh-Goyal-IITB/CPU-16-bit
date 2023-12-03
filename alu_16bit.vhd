@@ -69,11 +69,14 @@ architecture bhv of alu_16bit is
 
   signal add_sub_out, mul_out, and_out, or_out, imp_out, arith_out, logical_out: std_logic_vector(15 downto 0);
   signal carry: std_logic;
+	signal test_signal: std_logic_vector(1 downto 0);
+	signal m_output: std_logic_vector(15 downto 0);
 begin
   c <= carry and (not operation(2)) and (not operation(0));
-  z_proc: process(output)
+	output <= m_output;
+  z_proc: process(m_output)
   begin
-    if (output = x"0000") then
+    if (m_output = x"0000") then
       z <= '1';
     else 
       z <= '0';
@@ -87,8 +90,9 @@ begin
   imp_both: implication_16bit port map (a, b, imp_out);
 
   arith_mux: mux_2x1_16bit port map (add_sub_out, mul_out, operation(2), arith_out);
-  logical_mux: mux_4x1_16bit port map (and_out, or_out, imp_out, imp_out, operation(2) & operation(1), logical_out);
+	test_signal <= operation(2) & operation(1);
+  logical_mux: mux_4x1_16bit port map (and_out, or_out, imp_out, imp_out, test_signal, logical_out);
 
-  combined_mux: mux_2x1_16bit port map (arith_out, logical_out, operation(0), output);
+  combined_mux: mux_2x1_16bit port map (arith_out, logical_out, operation(0), m_output);
 
 end architecture bhv;

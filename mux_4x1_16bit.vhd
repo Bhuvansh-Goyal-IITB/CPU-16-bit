@@ -17,8 +17,15 @@ architecture bhv of mux_4x1_16bit is
       y: out std_logic
     );
   end component mux_4x1_1bit;
+
+  signal mux_outputs: std_logic_vector(15 downto 0);
 begin
-  mux_gen: for i in 0 to 15 generate
-    mux_4x1: mux_4x1_1bit port map (i3(i) & i2(i) & i1(i) & i0(i), s, y(i)); 
-  end generate mux_gen;  
+  gen: for i in 0 to 15 generate
+    signal temp_input: std_logic_vector(3 downto 0);
+  begin
+    temp_input <= i3(i) & i2(i) & i1(i) & i0(i);
+    mux_inst: mux_4x1_1bit port map (temp_input, s, mux_outputs(i));
+  end generate;
+
+  y <= mux_outputs;
 end architecture bhv;

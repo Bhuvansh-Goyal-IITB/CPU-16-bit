@@ -19,9 +19,10 @@ architecture bhv of mux_4x1_1bit is
   end component mux_2x1_1bit;
   
   signal mx1_out, mx2_out: std_logic;
+	signal test_signal: std_logic_vector(1 downto 0);
 begin
   mx1: mux_2x1_1bit port map (input(1 downto 0), s(0), mx1_out);
   mx2: mux_2x1_1bit port map (input(3 downto 2), s(0), mx2_out);
-  
-  mx3: mux_2x1_1bit port map (mx2_out & mx1_out, s(1), y);
+  test_signal <= mx2_out & mx1_out;
+  mx3: mux_2x1_1bit port map (test_signal, s(1), y);
 end architecture bhv;

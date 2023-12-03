@@ -1,3 +1,12 @@
 .mypy_cache
 *.ghw
 *.cf
+__pycache__/
+*.bak
+*.qpf
+*.qsf
+db/
+incremental_db/
+output_files/
+simulation/
+CPU_nativelink_simulation.rpt

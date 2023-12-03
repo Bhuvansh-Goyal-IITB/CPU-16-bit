@@ -1,3 +1,5 @@
+from utility import int_to_bin, reg_to_bin
+
 ins_dict = {
     "add": {"opcode": "0000", "ins_type": "r"},
     "sub": {"opcode": "0010", "ins_type": "r"},
@@ -29,24 +31,24 @@ def line_to_binary(line):
     ins_type = ins_dict[line[0]]["ins_type"]
 
     if ins_type == "r":
-        output += line[1]
-        output += line[2]
-        output += line[3]
+        output += reg_to_bin(line[1])
+        output += reg_to_bin(line[2])
+        output += reg_to_bin(line[3])
         output += "000"
     elif ins_type == "i":
-        output += line[1]
-        output += line[2]
+        output += reg_to_bin(line[1])
+        output += reg_to_bin(line[2])
         if len(line) == 3:
             output += "000000"
         else:
-            output += line[3]
+            output += int_to_bin(line[3], 6)
     elif ins_type == "j":
-        output += line[1]
-        output += line[2]
+        output += reg_to_bin(line[1])
+        output += int_to_bin(line[2], 9)
     elif ins_type == "h":
         output += "000000000000"
     elif ins_type == "p":
-        output += line[1]
+        output += int_to_bin(line[1], 12)
 
     return output
 
@@ -81,3 +83,16 @@ for key, value in blocks.items():
     for parsed_line in value["lines"]:
         with open("./input.txt", "a") as file:
             file.write(line_to_binary(parsed_line) + "\n")
+
+with open("assembler/memory_template.txt", "r") as file:
+    template = file.read()
+
+with open("input.txt", "r") as file:
+    bin_lines = file.readlines()
+    bin_lines = [str(index) + " => " + f'"{line.strip()}",' for index, line in enumerate(bin_lines)]
+    final_block = ""
+    for line in bin_lines:
+        final_block += line + "\n"
+
+with open("im_memory.vhd", "w") as file:
+    file.write(template.replace("{insert}", final_block))
