@@ -1,0 +1,5 @@
+lli r0 50
+prt r0
+lli r0 20
+prt r0
+lli r7 0

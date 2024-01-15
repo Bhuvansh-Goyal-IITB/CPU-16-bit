@@ -20,12 +20,10 @@ begin
 
   clock_proc: process (clock, enable, reset) 
   begin
-    if (clock'event and clock = '1' and enable = '1') then 
-			if (reset = '1') then
-				reg_file <= (others => x"0000");
-			else 
-				reg_file(to_integer(unsigned(c))) <= data_in;
-			end if;
+		if (reset = '1') then
+			reg_file <= (others => x"0000");
+    elsif (clock'event and clock = '1' and enable = '1') then 
+			reg_file(to_integer(unsigned(c))) <= data_in;
 		end if;
   end process clock_proc;
 end architecture bhv;

@@ -15,12 +15,10 @@ begin
   q_not <= not m_q;
   clock_process: process(clock, enable, reset)
   begin
-    if (clock'event and clock = '1' and enable = '1') then
-			if (reset = '1') then
-				m_q <= '0';
-			else 
-				m_q <= d;
-			end if;
+		if (reset = '1') then
+			m_q <= '0';		
+    elsif (clock'event and clock = '1' and enable = '1') then
+			m_q <= d;
     end if;
   end process clock_process;
 end architecture bhv;

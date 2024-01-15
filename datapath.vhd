@@ -31,7 +31,8 @@ architecture bhv of datapath is
 
 	component dm_memory is
 		port (
-			address_in, data_in: in std_logic_vector(15 downto 0);
+			address_in: in std_logic_vector(5 downto 0);
+			data_in: in std_logic_vector(15 downto 0);
 			enable, clock, reset: in std_logic;
 			output: out std_logic_vector(15 downto 0)
 		);
@@ -39,7 +40,7 @@ architecture bhv of datapath is
 	
 	component im_memory is
 		port (
-			address_in: in std_logic_vector(15 downto 0);
+			address_in: in std_logic_vector(5 downto 0);
 			output: out std_logic_vector(15 downto 0)
 		);
 	end component im_memory;
@@ -182,7 +183,7 @@ begin
   );
 
   im: im_memory port map (
-    pc_out, 
+    pc_out(5 downto 0), 
     im_out
   );
 
@@ -194,7 +195,7 @@ begin
 	);
 
   dm: dm_memory port map (
-    dm_address_mux_out, -- add in
+    dm_address_mux_out(5 downto 0), -- add in
     ta_out, -- data in
     mem_enable, 
     clock, 
@@ -251,7 +252,7 @@ begin
     rf_data_mux_out
   );
 	
-	rf_enable_input <= 	(update_r7 and ((ti_out(11) and ti_out(10) and ti_out(9)) or (ti_out(8) and ti_out(7) and ti_out(6)))) or ((not update_r7) and rf_enable);
+	rf_enable_input <= 	(update_r7 and not ((ti_out(11) and ti_out(10) and ti_out(9)) or (ti_out(8) and ti_out(7) and ti_out(6)))) or ((not update_r7) and rf_enable);
 
   rf: register_file port map (
     clock, 

@@ -1,4 +1,7 @@
 .mypy_cache
+*.qsys_edit/
+*.qws
+*.svf
 *.ghw
 *.cf
 __pycache__/

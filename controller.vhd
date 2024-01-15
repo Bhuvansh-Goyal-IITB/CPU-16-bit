@@ -15,12 +15,10 @@ architecture bhv of controller is
 begin  
   clock_proc: process(clock, reset)
   begin
-    if (clock'event and clock = '1') then 
-			if (reset = '1') then
-				present_state <= s1;
-			else
-				present_state <= next_state;
-			end if;
+		if (reset = '1') then
+			present_state <= s1;
+    elsif (clock'event and clock = '1') then 
+			present_state <= next_state;
     end if;
   end process clock_proc;
   
