@@ -1,6 +1,6 @@
 def int_to_bin(number: str, bin_length: int) -> str:
     number = int(number)
-    if (number > pow(2, bin_length - 1) - 1) or (number < -pow(2, bin_length-1)):
+    if number > pow(2, bin_length ) - 1:
         raise Exception("Number is out of range")
     ans = ""
     for i in range(0, bin_length):

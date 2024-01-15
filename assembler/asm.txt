@@ -1,4 +1,5 @@
 initialize:
+  lli r4 2
   adi r0 r0 7 
   sw r0 r1 0
   adi r1 r1 1
@@ -17,7 +18,6 @@ fib:
   lw r0 r2 1
   sw r0 r2 2
 
-  prt 2
 
   lw r0 r2 3
   sw r0 r2 1

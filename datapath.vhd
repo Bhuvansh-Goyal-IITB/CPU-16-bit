@@ -4,12 +4,11 @@ use IEEE.numeric_std.all;
 
 entity datapath is
   port (
-    clock: in std_logic;
-    control: in std_logic_vector(19 downto 0);  
-    print: in std_logic;
-    c, z: out std_logic;
+    clock, reset, output_select, flag_select: in std_logic;
+    control: in std_logic_vector(23 downto 0);  
+    z: out std_logic;
     opcode: out std_logic_vector(3 downto 0);
-    mem_out: out std_logic_vector(15 downto 0)
+		output: out std_logic_vector(7 downto 0)
   );
 end entity datapath;
 
@@ -33,7 +32,7 @@ architecture bhv of datapath is
 	component dm_memory is
 		port (
 			address_in, data_in: in std_logic_vector(15 downto 0);
-			enable, clock: in std_logic;
+			enable, clock, reset: in std_logic;
 			output: out std_logic_vector(15 downto 0)
 		);
 	end component dm_memory;
@@ -47,7 +46,7 @@ architecture bhv of datapath is
 
   component register_16bit is
     port (
-      clock, enable: in std_logic;
+      clock, enable, reset: in std_logic;
       data_in: in std_logic_vector(15 downto 0);
       data_out: out std_logic_vector(15 downto 0)
     );
@@ -55,7 +54,7 @@ architecture bhv of datapath is
 
   component register_file is
     port (
-      clock, enable: in std_logic;
+      clock, enable, reset: in std_logic;
       a, b, c: in std_logic_vector(2 downto 0);  
       data_in: in std_logic_vector(15 downto 0);
       da_out, db_out: out std_logic_vector(15 downto 0)
@@ -101,20 +100,51 @@ architecture bhv of datapath is
     );
   end component mux_4x1_3bit;
 
-  signal pc_enable, ti_enable, ta_enable, tb_enable, rf_enable, mem_enable: std_logic;
-  signal mp, mz, pdc: std_logic;
+	component mux_2x1_3bit is
+		port (
+			i0, i1: in std_logic_vector(2 downto 0);
+			s: in std_logic;
+			y: out std_logic_vector(2 downto 0)
+		);
+	end component mux_2x1_3bit;
+	
+	component output_module is
+		port (
+			clock, enable, reset, output_select, input_select: in std_logic;
+			ra, dm: in std_logic_vector(15 downto 0);
+			data_out: out std_logic_vector(7 downto 0)
+		);
+	end component output_module;
+
+	component mux_2x1_8bit is
+		port (
+			i0, i1: in std_logic_vector(7 downto 0);
+			s: in std_logic;
+			y: out std_logic_vector(7 downto 0)
+		);
+	end component mux_2x1_8bit;
+
+	
+	signal pc_enable_input, rf_enable_input, c_out, z_out: std_logic;
+	
+  signal update_pc, update_r7, pc_enable, ti_enable, print_enable, ta_enable, tb_enable, rf_enable, mem_enable: std_logic;
+  signal mp, mz, pdc, mdm: std_logic;
   signal mr, mdi, maa, mab: std_logic_vector(1 downto 0);
   signal aluc: std_logic_vector(2 downto 0);
 
-  signal pc_mux_out, pc_out, im_mux_out, im_out: std_logic_vector(15 downto 0); 
+  signal pc_mux_out, pc_update_mux_out, pc_out, im_out, dm_out: std_logic_vector(15 downto 0); 
   signal rf_data_mux_out: std_logic_vector(15 downto 0); 
-  signal rf_address_mux_out: std_logic_vector(2 downto 0);
+  signal rf_address_mux_out, rf_address_update_mux_out: std_logic_vector(2 downto 0);
   signal rf_da_out, rf_db_out: std_logic_vector(15 downto 0); 
+	signal flag_out, output_out: std_logic_vector(7 downto 0);
   signal se6_out, se9_out, pd_out: std_logic_vector(15 downto 0);
-  signal m_mem_out: std_logic_vector(15 downto 0); 
-  signal t0_out, t1_out, t2_out: std_logic_vector(15 downto 0); 
-  signal alu_a_mux_out, alu_b_mux_out, zero_mux_out, alu_out, dm_mux_out, test_signal: std_logic_vector(15 downto 0); 
+  signal ti_out, ta_out, tb_out: std_logic_vector(15 downto 0); 
+  signal alu_a_mux_out, alu_b_mux_out, zero_mux_out, alu_out, dm_address_mux_out: std_logic_vector(15 downto 0); 
 begin
+	update_pc <= control(23); 
+	update_r7 <= control(22); 
+	print_enable <= control(21); 
+	mdm <= control(20); 
   pc_enable <= control(19); 
   ti_enable <= control(18); 
   ta_enable <= control(17); 
@@ -132,12 +162,22 @@ begin
   maa <= control(4 downto 3);
   aluc <= control(2 downto 0);
 
-  opcode <= t0_out(15 downto 12);
+  opcode <= ti_out(15 downto 12);
 
+	pc_enable_input <= (update_pc and (rf_address_update_mux_out(0) and rf_address_update_mux_out(1) and rf_address_update_mux_out(2))) or ((not update_pc) and pc_enable);
+	
+	pc_update_mux: mux_2x1_16bit port map (
+		pc_mux_out,
+		rf_data_mux_out,
+		update_pc,
+		pc_update_mux_out
+	);
+	
   pc_reg: register_16bit port map (
     clock, 
-    pc_enable, 
-    pc_mux_out, 
+    pc_enable_input, 
+    reset,
+		pc_update_mux_out, 
     pc_out
   );
 
@@ -146,92 +186,104 @@ begin
     im_out
   );
 
-	test_signal <= "0000" & t0_out(11 downto 0);
-  dm_mux: mux_2x1_16bit port map (
-    alu_out, test_signal,
-    print,
-    dm_mux_out
-  );
+  dm_address_mux: mux_2x1_16bit port map (
+    alu_out, 
+		ta_out,
+    mdm,
+    dm_address_mux_out
+	);
 
   dm: dm_memory port map (
-    dm_mux_out, -- add in
-    t1_out, -- data in
+    dm_address_mux_out, -- add in
+    ta_out, -- data in
     mem_enable, 
     clock, 
-    m_mem_out
+		reset, 
+    dm_out
   );
-  
-  mem_out <= m_mem_out;
 
   se6: signed_extender_6bit port map (
-    t0_out(5 downto 0),
+    ti_out(5 downto 0),
     se6_out
   );
 
   se9: signed_extender_9bit port map (
-    t0_out(8 downto 0),
+    ti_out(8 downto 0),
     se9_out
   );
 
   pd: padd_immediate_9bit port map (
-    t0_out(8 downto 0),
+    ti_out(8 downto 0),
     pdc, 
     pd_out
   );
   
-  t0_reg: register_16bit port map (
+  ti_reg: register_16bit port map (
     clock, 
     ti_enable, 
+		reset, 
     im_out, 
-    t0_out
+    ti_out
   );
   
   rf_address_mux: mux_4x1_3bit port map (
-    t0_out(8 downto 6),
-    t0_out(11 downto 9),
-    t0_out(5 downto 3),
+    ti_out(8 downto 6),
+    ti_out(11 downto 9),
+    ti_out(5 downto 3),
     "000",
     mr,
     rf_address_mux_out
   );
 
+	rf_address_update_mux: mux_2x1_3bit port map (
+		rf_address_mux_out,
+		"111",
+		update_r7,
+		rf_address_update_mux_out
+	);
+	
   rf_data_mux: mux_4x1_16bit port map (
     alu_out,
     pd_out,
-    m_mem_out,
+    dm_out,
     pc_out,
     mdi,
     rf_data_mux_out
   );
+	
+	rf_enable_input <= 	(update_r7 and ((ti_out(11) and ti_out(10) and ti_out(9)) or (ti_out(8) and ti_out(7) and ti_out(6)))) or ((not update_r7) and rf_enable);
 
   rf: register_file port map (
     clock, 
-    rf_enable,
-    t0_out(11 downto 9),
-    t0_out(8 downto 6),
-    rf_address_mux_out,
+    rf_enable_input,
+		reset,
+    ti_out(11 downto 9),
+    ti_out(8 downto 6),
+    rf_address_update_mux_out,
     rf_data_mux_out, --data in,
     rf_da_out,
     rf_db_out
   );
 
-  t1_reg: register_16bit port map (
+  ta_reg: register_16bit port map (
     clock,
     ta_enable,
+		reset,
     rf_da_out,
-    t1_out
+    ta_out
   );
 
-  t2_reg: register_16bit port map (
+  tb_reg: register_16bit port map (
     clock,
-    tb_enable, 
+    tb_enable,
+		reset, 
     rf_db_out,
-    t2_out
+    tb_out
   );
 
   alu_b_mux: mux_4x1_16bit port map (
     pc_out, 
-    t2_out,
+    tb_out,
     se6_out,
     x"0000",
     mab,
@@ -240,7 +292,7 @@ begin
 
   alu_a_mux: mux_4x1_16bit port map (
     x"0001",
-    t1_out,
+    ta_out,
     se9_out,
     zero_mux_out,
     maa,
@@ -259,13 +311,32 @@ begin
     alu_b_mux_out,
     aluc,
     alu_out,
-    c,
-    z
+    c_out,
+    z_out
   );
-
+	
+	z <= z_out;	
+	
+	flag_out <= "000000" & c_out & z_out;
+	
+	output_controller: output_module port map (
+		clock, print_enable, reset,
+		output_select,
+		ti_out(0),
+		ta_out, dm_out,
+		output_out
+	);
+		
+	output_mux: mux_2x1_8bit port map (
+		output_out,
+		flag_out,
+		flag_select,
+		output
+	);
+		
   pc_mux: mux_2x1_16bit port map (
     alu_out,
-    t2_out,
+    tb_out,
     mp,
     pc_mux_out
   );

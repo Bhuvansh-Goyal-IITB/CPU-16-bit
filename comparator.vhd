@@ -1,13 +1,11 @@
 library IEEE;
 use IEEE.std_logic_1164.all;
 
-entity register_16bit is
+entity comparator is
   port (
-    clock, enable, reset: in std_logic;
-    data_in: in std_logic_vector(15 downto 0);
-    data_out: out std_logic_vector(15 downto 0)
+    ra, rb: in std_logic_vector(2 downto 0);
   );
-end entity register_16bit;
+end entity comparator;
 
 architecture bhv of register_16bit is
   component d_flip_flop is

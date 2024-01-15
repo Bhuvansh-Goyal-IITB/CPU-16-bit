@@ -48,7 +48,12 @@ def line_to_binary(line):
     elif ins_type == "h":
         output += "000000000000"
     elif ins_type == "p":
-        output += int_to_bin(line[1], 12)
+        if line[1][0] == "@":
+            output += reg_to_bin(line[1][1:])
+            output += "000000001"
+        else:
+            output += reg_to_bin(line[1]) 
+            output += "000000000"
 
     return output
 
