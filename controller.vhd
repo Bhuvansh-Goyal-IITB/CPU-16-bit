@@ -3,7 +3,7 @@ use IEEE.std_logic_1164.all;
 
 entity controller is
   port (
-    clock, reset, z: in std_logic;
+    clock, reset: in std_logic;
     opcode: in std_logic_vector(3 downto 0);
     control: out std_logic_vector(23 downto 0) := x"000000"
   );
@@ -102,13 +102,9 @@ begin
       when s13 => 
         control <= x"005038";
       when s14 => 
-        control <= x"00002A";
+        control <= x"00102A";
       when s15 => 
-        if (z = '0') then
-          control <= x"080018";
-        else 
-          control <= x"081018";
-        end if;
+        control <= x"080018";
       when s16 =>
         control <= x"088390";
       when s17 =>

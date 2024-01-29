@@ -13,7 +13,6 @@ architecture bhv of cpu is
 		port (
 			clock, reset, output_select, flag_select: in std_logic;
 			control: in std_logic_vector(23 downto 0);  
-			z: out std_logic;
 			opcode: out std_logic_vector(3 downto 0);
 			output: out std_logic_vector(7 downto 0)
 		);
@@ -25,18 +24,18 @@ architecture bhv of cpu is
 		
 	component controller is
 		port (
-			clock, reset, z: in std_logic;
+			clock, reset: in std_logic;
 			opcode: in std_logic_vector(3 downto 0);
 			control: out std_logic_vector(23 downto 0) := x"000000"
 		);
 	end component controller;
   
-	signal z, clock_out: std_logic;
+	signal clock_out: std_logic;
   signal control: std_logic_vector(23 downto 0);
   signal opcode: std_logic_vector(3 downto 0);
 begin
 	ctrl: controller port map (
-    clock_out, reset, z, 
+    clock_out, reset, 
     opcode,
     control
   );
@@ -48,7 +47,6 @@ begin
   dp: datapath port map (
     clock_out, reset, output_select, flag_select, 
     control,
-		z,
     opcode,
     output
   );

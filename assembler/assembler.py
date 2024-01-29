@@ -57,7 +57,6 @@ def line_to_binary(line):
 
     return output
 
-
 with open("./assembler/asm.txt", "r") as file:
     lines = file.readlines()
 

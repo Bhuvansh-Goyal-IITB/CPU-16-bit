@@ -6,7 +6,6 @@ entity datapath is
   port (
     clock, reset, output_select, flag_select: in std_logic;
     control: in std_logic_vector(23 downto 0);  
-    z: out std_logic;
     opcode: out std_logic_vector(3 downto 0);
 		output: out std_logic_vector(7 downto 0)
   );
@@ -125,15 +124,21 @@ architecture bhv of datapath is
 		);
 	end component mux_2x1_8bit;
 
+	component d_flip_flop is
+		port (
+			clock, enable, reset, d: in std_logic;
+			q, q_not: out std_logic 
+		);
+	end component d_flip_flop;
 	
 	signal pc_enable_input, rf_enable_input, c_out, z_out: std_logic;
 	
   signal update_pc, update_r7, pc_enable, ti_enable, print_enable, ta_enable, tb_enable, rf_enable, mem_enable: std_logic;
-  signal mp, mz, pdc, mdm: std_logic;
+  signal mp, mz, pdc, mdm, zero_dff_out: std_logic;
   signal mr, mdi, maa, mab: std_logic_vector(1 downto 0);
   signal aluc: std_logic_vector(2 downto 0);
 
-  signal pc_mux_out, pc_update_mux_out, pc_out, im_out, dm_out: std_logic_vector(15 downto 0); 
+  signal pc_mux_out, pc_update_mux_out, pc_out, im_out, dm_out, zero_beq_mux_out: std_logic_vector(15 downto 0); 
   signal rf_data_mux_out: std_logic_vector(15 downto 0); 
   signal rf_address_mux_out, rf_address_update_mux_out: std_logic_vector(2 downto 0);
   signal rf_da_out, rf_db_out: std_logic_vector(15 downto 0); 
@@ -301,7 +306,7 @@ begin
   );
 
   zero_mux: mux_2x1_16bit port map (
-    x"0000",
+    zero_beq_mux_out,
     se6_out,
     mz,
     zero_mux_out
@@ -316,7 +321,17 @@ begin
     z_out
   );
 	
-	z <= z_out;	
+	zero_dff: d_flip_flop port map (
+		clock, mz, reset, z_out,
+		zero_dff_out
+	);
+	
+	zero_beq_mux: mux_2x1_16bit port map (
+		x"0000",
+		se6_out,
+		zero_dff_out,
+		zero_beq_mux_out
+	);
 	
 	flag_out <= "000000" & c_out & z_out;
 	
