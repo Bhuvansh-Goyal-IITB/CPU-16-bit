@@ -1,4 +1,9 @@
 from utility import int_to_bin, reg_to_bin
+import sys
+
+if (len(sys.argv) > 2):
+    print("You can only pass one argument (input file)")
+    sys.exit()
 
 ins_dict = {
     "add": {"opcode": "0000", "ins_type": "r"},
@@ -57,8 +62,16 @@ def line_to_binary(line):
 
     return output
 
-with open("./assembler/asm.txt", "r") as file:
-    lines = file.readlines()
+
+try:
+    with open(sys.argv[1], "r") as file:
+        lines = file.readlines()
+except FileNotFoundError:
+    print(f"The file '{sys.argv[1]}' does not exist")
+    sys.exit()
+except IndexError:
+    print("No input file provided")
+    sys.exit()
 
 parsed_lines = list()
 for line in lines:
@@ -80,23 +93,19 @@ for parsed_line in parsed_lines:
             blocks[current_block]["lines"].append(parsed_line)
             current_mem_address += 1
 
-with open("./input.txt", "w") as file:
-    pass
+binary_lines = []
 
 for key, value in blocks.items():
     for parsed_line in value["lines"]:
-        with open("./input.txt", "a") as file:
-            file.write(line_to_binary(parsed_line) + "\n")
+        binary_lines.append(line_to_binary(parsed_line) + "\n")
 
-with open("assembler/memory_template.txt", "r") as file:
+with open("memory_template.txt", "r") as file:
     template = file.read()
 
-with open("input.txt", "r") as file:
-    bin_lines = file.readlines()
-    bin_lines = [str(index) + " => " + f'"{line.strip()}",' for index, line in enumerate(bin_lines)]
-    final_block = ""
-    for line in bin_lines:
-        final_block += line + "\n"
+binary_lines = [str(index) + " => " + f'"{line.strip()}",' for index, line in enumerate(binary_lines)] 
+final_block = ""
+for line in binary_lines:
+    final_block += line + "\n"
 
 with open("im_memory.vhd", "w") as file:
     file.write(template.replace("{insert}", final_block))
